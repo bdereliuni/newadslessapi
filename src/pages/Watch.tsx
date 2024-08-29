@@ -163,10 +163,6 @@ export default function Watch() {
           poster: data ? `${API_BASE_IMAGE_URL}${data.backdrop_path}` : '',
           type: 'application/x-mpegurl' as const,
         },
-        subtitles: {
-          src: currentSubtitle || subtitles[0]?.url || '', // İlk altyazıyı ya da seçili olanı kullanıyoruz
-          language: 'en', // Varsayılan dil İngilizce, dil tercihinize göre değiştirebilirsiniz
-        },
       })
       .use([
         OUI({
@@ -197,17 +193,23 @@ export default function Watch() {
               onChange({ value }) {
                 if (value === 'off') {
                   setCurrentSubtitle(null);
-                  newPlayer.switchSubtitles('');
+                  const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
+                  if (subtitlesPlugin) {
+                    (subtitlesPlugin as any).switch(-1);
+                  }
                 } else {
                   setCurrentSubtitle(value);
-                  newPlayer.switchSubtitles(value);
+                  const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
+                  if (subtitlesPlugin) {
+                    (subtitlesPlugin as any).switch(value);
+                  }
                 }
               },
             },
           ],
         }),
         OHls(),
-        vttThumbnails({ src: currentSubtitle || (subtitles[0]?.url ?? null) }),
+        vttThumbnails({ src: currentSubtitle || (subtitles[0]?.url ?? null) }), // Use currentSubtitle or default to first subtitle
       ])
       .create();
 
