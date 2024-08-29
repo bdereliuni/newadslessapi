@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet';
 import Player from '@oplayer/core';
 import OUI from '@oplayer/ui';
 import OHls from '@oplayer/hls';
-import { vttThumbnails } from '@oplayer/plugins';
 
 const API_BASE_IMAGE_URL = 'https://image.tmdb.org/t/p/w500';
 const CONSUMET_API_BASE = 'https://consumet-api-1ozb.onrender.com/movies/flixhq';
@@ -41,14 +40,13 @@ export default function Watch() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [sources, setSources] = useState<Source[]>([]);
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
-  const [currentSubtitle, setCurrentSubtitle] = useState<string | null>(null);
 
   async function getStreamingData(title: string) {
     try {
       const formattedTitle = title.toLowerCase().replace(/ /g, '-');
       const searchResponse = await fetch(`${CONSUMET_API_BASE}/${formattedTitle}?page=1`);
       const searchData = await searchResponse.json();
-
+      
       const exactMatch = searchData.results.find((result: { title: string }) => result.title === title);
       if (!exactMatch) {
         throw new Error('No exact match found');
@@ -149,11 +147,7 @@ export default function Watch() {
   useEffect(() => {
     if (videoUrl && playerContainerRef.current) {
       if (player) {
-        try {
-          player.destroy();
-        } catch (error) {
-          console.error('Error destroying player:', error);
-        }
+        player.destroy();
       }
 
       const newPlayer = Player.make(playerContainerRef.current, {
@@ -161,57 +155,54 @@ export default function Watch() {
           title: getTitle(),
           src: videoUrl,
           poster: data ? `${API_BASE_IMAGE_URL}${data.backdrop_path}` : '',
-          type: 'application/x-mpegurl' as const,
+          type: 'application/x-mpegurl' as const, // Düzeltilmiş kısım
         },
       })
-      .use([
-        OUI({
-          theme: { primaryColor: '#42b883' },
-          menu: [
-            {
-              name: 'Quality',
-              position: 'bottom',
-              children: sources.map(source => ({
-                name: source.quality,
-                value: source.url,
-                default: source.url === videoUrl,
-              })),
-              onChange({ value }) {
-                newPlayer.changeQuality({ src: value });
-              },
-            },
-            {
-              name: 'Subtitles',
-              position: 'bottom',
-              children: [
-                { name: 'Off', value: 'off' },
-                ...subtitles.map(subtitle => ({
-                  name: subtitle.lang,
-                  value: subtitle.url,
+        .use([
+          OUI({
+            theme: { primaryColor: '#42b883' },
+            menu: [
+              {
+                name: 'Quality',
+                position: 'bottom',
+                children: sources.map(source => ({
+                  name: source.quality,
+                  value: source.url,
+                  default: source.url === videoUrl,
                 })),
-              ],
-              onChange({ value }) {
-                if (value === 'off') {
-                  setCurrentSubtitle(null);
-                  const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
-                  if (subtitlesPlugin) {
-                    (subtitlesPlugin as any).switch(-1);
-                  }
-                } else {
-                  setCurrentSubtitle(value);
-                  const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
-                  if (subtitlesPlugin) {
-                    (subtitlesPlugin as any).switch(value);
-                  }
-                }
+                onChange({ value }) {
+                  newPlayer.changeQuality({ src: value });
+                },
               },
-            },
-          ],
-        }),
-        OHls(),
-        vttThumbnails({ src: currentSubtitle || (subtitles[0]?.url ?? null) }), // Use currentSubtitle or default to first subtitle
-      ])
-      .create();
+              {
+                name: 'Subtitles',
+                position: 'bottom',
+                children: [
+                  { name: 'Off', value: 'off' },
+                  ...subtitles.map(subtitle => ({
+                    name: subtitle.lang,
+                    value: subtitle.url,
+                  })),
+                ],
+                onChange({ value }) {
+                  if (value === 'off') {
+                    const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
+                    if (subtitlesPlugin) {
+                      (subtitlesPlugin as any).switch(-1);
+                    }
+                  } else {
+                    const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
+                    if (subtitlesPlugin) {
+                      (subtitlesPlugin as any).switch(value);
+                    }
+                  }
+                },
+              },
+            ],
+          }),
+          OHls(),
+        ])
+        .create();
 
       setPlayer(newPlayer);
 
@@ -221,7 +212,7 @@ export default function Watch() {
         }
       };
     }
-  }, [videoUrl, data, sources, subtitles, currentSubtitle]);
+  }, [videoUrl, data, sources, subtitles]);
 
   function getTitle() {
     let title = data ? ('name' in data ? data.name : 'title' in data ? data.title : 'Watch') : 'Watch';
@@ -252,4 +243,3 @@ export default function Watch() {
     </>
   );
 }
-
