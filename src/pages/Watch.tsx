@@ -160,6 +160,13 @@ export default function Watch() {
       })
         .use([
           OUI({
+            subtitle: {
+              source: subtitles.map(subtitle => ({
+                name: subtitle.lang,
+                src: subtitle.url,
+                default: subtitle.lang.toLowerCase() === 'english', // Default olarak İngilizce altyazı seçilebilir
+              })),
+            },
             theme: { primaryColor: '#42b883' },
             menu: [
               {
@@ -172,30 +179,6 @@ export default function Watch() {
                 })),
                 onChange({ value }) {
                   newPlayer.changeQuality({ src: value });
-                },
-              },
-              {
-                name: 'Subtitles',
-                position: 'bottom',
-                children: [
-                  { name: 'Off', value: 'off' },
-                  ...subtitles.map(subtitle => ({
-                    name: subtitle.lang,
-                    value: subtitle.url,
-                  })),
-                ],
-                onChange({ value }) {
-                  if (value === 'off') {
-                    const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
-                    if (subtitlesPlugin) {
-                      (subtitlesPlugin as any).switch(-1);
-                    }
-                  } else {
-                    const subtitlesPlugin = newPlayer.plugins.find(plugin => plugin.name === 'subtitle');
-                    if (subtitlesPlugin) {
-                      (subtitlesPlugin as any).switch(value);
-                    }
-                  }
                 },
               },
             ],
