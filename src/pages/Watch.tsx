@@ -181,24 +181,6 @@ export default function Watch() {
                   newPlayer.changeQuality({ src: value });
                 },
               },
-              {
-                name: 'Subtitles',
-                position: 'bottom',
-                children: [
-                  { name: 'Off', value: 'off' },
-                  ...subtitles.map(subtitle => ({
-                    name: subtitle.lang,
-                    value: subtitle.url,
-                  })),
-                ],
-                onChange({ value }) {
-                  if (value === 'off') {
-                    newPlayer.setSubtitles([]); // Altyazıyı kaldır
-                  } else {
-                    newPlayer.setSubtitles([{ src: value, default: true }]);
-                  }
-                },
-              },
             ],
           }),
           OHls(),
